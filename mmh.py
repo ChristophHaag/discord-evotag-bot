@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import urllib.request
 
-DEBUG = True
+DEBUG = False
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
 debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html"]
 DISAPPEARED = "DISAPPEARED"
