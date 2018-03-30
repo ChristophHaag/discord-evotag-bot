@@ -2,6 +2,8 @@ import discord
 import mmh
 import asyncio
 
+import ent_hosting
+
 with open("token.txt", "r") as tokenfile:
     TOKEN = tokenfile.read().rstrip()
 #print("Token: " + TOKEN)
@@ -25,6 +27,16 @@ async def on_message(message):
     if message.content.startswith('!hello'):
         msg = 'Hello {0.author.mention}'.format(message)
         await client.send_message(message.channel, msg)
+
+    if message.content.startswith('!host'):
+        spl = message.content.split(" ")
+        if len(spl) > 1:
+            gamename = ent_hosting.host_game(spl[1])
+            msg = "Game hosted with gamename `" + gamename + "`. Join and change the name with !pub <GAME NAME>"
+            await client.send_message(message.channel, msg)
+        else:
+            msg = 'Host a game with !host <YOUR WARCRAFT ACCOUNT>'
+            await client.send_message(message.channel, msg)
 
 
 @client.event
