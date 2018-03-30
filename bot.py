@@ -7,8 +7,10 @@ with open("token.txt", "r") as tokenfile:
 #print("Token: " + TOKEN)
 
 client = discord.Client()
-
-channelname = "hosted-games"  # channelid and channelobject will be filled in
+if mmh.DEBUG:
+    channelname = "bot-test"
+else:
+    channelname = "hosted-games"  # channelid and channelobject will be filled in
 channelid = None
 channelobject = None
 
@@ -48,12 +50,26 @@ async def on_ready():
 
     async def my_background_task():
         await client.wait_until_ready()
+
+        loopcnt = 0
         while not client.is_closed:
-            gns = r.get_evotag_games()
-            msg = mmh.makeString(gns)
-            if msg:
-                await client.send_message(channelobject, msg)
-            await asyncio.sleep(15)  # task runs every X seconds
+            currentgames, disappearedgames = r.get_evotag_games()
+            for botname, currentgame in currentgames.items():
+                if currentgame.status == mmh.NEWGAME:
+                    currentgame.userptr = await client.send_message(channelobject, currentgame.msgstr)
+                    print("New line: " + currentgame.msgstr, currentgame.userptr)
+                elif currentgame.status == mmh.SAMEGAME:
+                    print("Editing msg: " + currentgame.msgstr, currentgame.userptr)
+                    currentgame.userptr = await client.edit_message(currentgame.userptr, currentgame.msgstr)
+            for disappearedgame in disappearedgames:
+                print("New line: " + disappearedgame.msgstr)
+                await client.send_message(channelobject, disappearedgame.msgstr)
+            loopcnt += 1
+            if mmh.DEBUG:
+                interval = 2
+            else:
+                interval = 15
+            await asyncio.sleep(interval)  # task runs every X seconds
     client.loop.create_task(my_background_task())
 
 client.run(TOKEN)

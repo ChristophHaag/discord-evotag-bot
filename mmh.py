@@ -6,26 +6,63 @@ import urllib.request
 DEBUG = False
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
 debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html"]
-DISAPPEARED = "DISAPPEARED"
-SAME = "SAME"
+#debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html"]
+
+NEWGAME = "NEW"
+SAMEGAME = "SAME"
+DISAPPEAREDGAME = "DISAPPEARED"
+
+class OpenGame():
+    botname = None
+    country = None
+    status = None
+    gamename = None
+    players = None
+    previous = None
+    userptr = None
+    msgstr = None
+
+    def __repr__(self):
+        return self.status + ": " + "OpenGame{" + self.botname + " in " + self.country + ": " + self.gamename + "(" + self.players + ")}"
+
+    def __init__(self, botname, country, gamename, players):
+        self.botname = botname
+        self.country = country
+        self.gamename = gamename
+        self.players = players
+        self.status = NEWGAME
+
+    def same_game(self, game2):
+        assert isinstance(game2, OpenGame)
+        return self.botname == game2.botname
+
+    def equals_name(self, game2):
+        assert isinstance(game2, OpenGame)
+        return self.gamename == game2.gamename
+
+    def equals_exactly(self, game2):
+        assert isinstance(game2, OpenGame)
+        return self.gamename == game2.gamename and self.players == game2.players
+
+    def add_prev_game(self, last_open_game):
+        self.previous.append(last_open_game)
+
+    def update_values_from(self, oldgame):
+        self.userptr = oldgame.userptr
+
 
 class Requester():
-    cb = None
-    running = True
-    lastnames = []
+    last_open_games = {}
     requestscount = 0
 
     def __init__(self):
         pass
 
-    def abort(self):
-        self.running = False
-
-    def get_mmh_str(self):
+    def get_makemehost_as_str(self):
         if DEBUG:
             num = self.requestscount % (len(debugsites) - 1)
             with open(debugsites[num], "r") as f:
-                #print("Debug: opening " + str(num) + ": " + f.name)
+                # print("Debug: opening " + str(num) + ": " + f.name)
                 html_doc = f.read()
         else:
             URL = "http://makemehost.com/games.php"
@@ -33,71 +70,101 @@ class Requester():
         self.requestscount += 1
         return html_doc
 
-    def found_game(self, gns):
-        #print("Found game: " + str(gns) + ", " + str(self.lastnames))
-        if len(gns) == 0 and len(self.lastnames) > 0:
-            self.lastnames = gns
-            return DISAPPEARED
-        if gns == self.lastnames:
-            #print("Game status has not changed")
-            return SAME
-        else:
-            self.lastnames = gns
-            return gns
+    def fill_in_strings(self, currentgames, disappearedgames):
+        for currentgame_botname in currentgames:
+            currentgame = currentgames[currentgame_botname]
+            #print("str for", currentgame)
+            currentgame.msgstr = "Game hosted on " + currentgame.botname + ": `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
+        for disappearedgame in disappearedgames:
+            disappearedgame.msgstr = "Game started (or cancelled): `" + disappearedgame.gamename + "` with " + disappearedgame.players + "!"
+        # if which == NEWGAMES:
+        #     for new_game in gamelist["new_games"]:
+        #         msg += "Game name: `" + new_game["gamename"] + "`\t(" + new_game["players"] + ")\n"
+        # elif which == SAMEGAMES:
+        #     for same_game in gamelist["same_games"]:
+        #         msg += "Game name: `" + same_game["gamename"] + "`\t(" + same_game["players"] + ")\n"
+        # elif which == DISAPPEAREDGAMES:
+        #     for disappeared_game in gamelist["disappeared_games"]:
+        #         msg += "Game started or cancelled: `" + disappeared_game["gamename"] + "` with " + disappeared_game["players"] + "\n"
 
-    def get_evotag_games(self):
-        """returns a list of string tuples [(gamename, players), (...)] or the constants DISAPPEARED or SAME"""
-        html_doc = self.get_mmh_str()
+    def process_changes(self, new_open_games):
+        #print("Process changes for: ", "last games", self.last_open_games, "new games", new_open_games)
+        current_open_games = {}
+        disappeared_games = []
+
+        for new_botname in new_open_games:
+            if new_botname in self.last_open_games.keys():
+                # we have already seen this game last update
+                oldgame = self.last_open_games[new_botname]
+                newgame = new_open_games[new_botname]
+                assert isinstance(oldgame, OpenGame)
+                assert isinstance(newgame, OpenGame)
+                newgame.previous = oldgame
+                newgame.update_values_from(oldgame)
+                newgame.status = SAMEGAME
+                current_open_games[new_botname] = newgame
+            else:
+                # this is a new game
+                current_open_games[new_botname] = new_open_games[new_botname]
+                current_open_games[new_botname].status = NEWGAME
+
+        for last_botname in self.last_open_games:
+            if last_botname not in new_open_games.keys():
+                # this game was open last time but is not open now
+                self.last_open_games[last_botname].status = DISAPPEAREDGAME
+                disappeared_games.append(self.last_open_games[last_botname])
+
+        self.last_open_games = current_open_games
+        self.fill_in_strings(current_open_games, disappeared_games)
+        return current_open_games, disappeared_games
+
+    def parse_html(self, html_doc):
         #print(html_doc)
 
         soup = BeautifulSoup(html_doc, 'html.parser')
         divs = soup.find('div', {"class": "refreshMeMMH"})
         rows = divs.table.find_all('tr')
 
-        found_games = []
+        table_games = {}
         for row in rows:
             data = row.find_all("td")
+            botname =  data[0].get_text()
+            country = data[1].get_text()
             gn = data[3].get_text()
             players = data[4].get_text()
             #print(gn)
             m = re.search('.*evo.*tag.*', gn.lower())
             #print(m)
             if m:
-                found_games.append((gn, players))
-        for g in found_games:
+                game = OpenGame(botname, country, gn, players)
+                table_games[botname] = game
+        for g in table_games:
             #print("found " + str(g))
             pass
-        return self.found_game(found_games)
+        return table_games
 
-def makeString(gns):
-    msg = ""
-    if gns == SAME:
-        msg = None
-    elif gns == DISAPPEARED:
-        msg = "Game started or cancelled!"
-    else:
-        # TODO: 1/2 games are started
-        for i, gn in enumerate(gns):
-            if len(gns) > 1:
-                nums = " (" + str(i+1) + "/" + str(len(gns)) + ")"
-            else:
-                nums = ""
-            msg += "Gamename" + nums + " : `" + gn[0] + "`   (" + gn[1] + ")"
-            if (i < len(gns) - 1):
-                msg += "\n"
-    return msg
+    def get_evotag_games(self):
+        """returns a list<OpenGame> """
+        table_games = self.parse_html(self.get_makemehost_as_str())
+        return self.process_changes(table_games)
 
+EDITMODE = "EDIT"
+PRINTMODE = "PRINT"
 
 if __name__ == "__main__":
     r = Requester()
     rnum = len(debugsites) if DEBUG else 5
     for i in range(rnum):
-        gns = r.get_evotag_games()
-        s = makeString(gns)
-        prefix = "Request " + str(i) + ": "
-        if s:
-            print(prefix + s.replace("\n", "\n" + prefix))
-            if not DEBUG:
-                time.sleep(5)
-        else:
-            print(prefix + "<No changes>")
+        prefix = "Request " + str(i)
+        currentgames, disappearedgames = r.get_evotag_games()
+
+        for num, botname in enumerate(currentgames.keys()):
+            currentgame = currentgames[botname]
+            #print(botname, currentgame)
+            if currentgame.msgstr:
+                print(prefix, "[" + currentgame.status + "]", currentgame.msgstr)
+        for disappearedgame in disappearedgames:
+            print(prefix, "[" + disappearedgame.status + "]", disappearedgame.msgstr)
+
+        if not DEBUG:
+            time.sleep(5)
