@@ -74,7 +74,7 @@ class Requester():
         for currentgame_botname in currentgames:
             currentgame = currentgames[currentgame_botname]
             #print("str for", currentgame)
-            currentgame.msgstr = "Game hosted on " + currentgame.botname + ": `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
+            currentgame.msgstr = "Game hosted on " + currentgame.botname + " [" + currentgame.country + "]: `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
         for disappearedgame in disappearedgames:
             disappearedgame.msgstr = "Game started (or cancelled): `" + disappearedgame.gamename + "` with " + disappearedgame.players + "!"
         # if which == NEWGAMES:
@@ -119,6 +119,7 @@ class Requester():
         return current_open_games, disappeared_games
 
     def parse_html(self, html_doc):
+
         #print(html_doc)
 
         soup = BeautifulSoup(html_doc, 'html.parser')
@@ -144,7 +145,6 @@ class Requester():
         return table_games
 
     def get_evotag_games(self):
-        """returns a list<OpenGame> """
         table_games = self.parse_html(self.get_makemehost_as_str())
         return self.process_changes(table_games)
 

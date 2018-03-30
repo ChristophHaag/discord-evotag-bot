@@ -7,6 +7,7 @@ with open("token.txt", "r") as tokenfile:
 #print("Token: " + TOKEN)
 
 client = discord.Client()
+
 if mmh.DEBUG:
     channelname = "bot-test"
 else:
@@ -34,7 +35,7 @@ async def on_ready():
     print("Available Channels:")
     for server in client.servers:
         for channel in server.channels:
-            print(channel.name + " "  + channel.id)
+            print(channel.name + " " + channel.id)
             if channel.name == channelname:
                 channelid = channel.id
                 channelobject = client.get_channel(channelid)
@@ -66,7 +67,7 @@ async def on_ready():
                 await client.send_message(channelobject, disappearedgame.msgstr)
             loopcnt += 1
             if mmh.DEBUG:
-                interval = 2
+                interval = 1
             else:
                 interval = 15
             await asyncio.sleep(interval)  # task runs every X seconds
