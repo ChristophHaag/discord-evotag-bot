@@ -113,7 +113,8 @@ class Requester():
         # work around VERY broken html before the ent games
         for _ in range(50):  # TODO: Fix this until there aren't </tr></tr> left
             html_doc = html_doc.replace("</tr></tr>", "</tr>")
-        # print(html_doc)
+        html_doc = html_doc.replace(" </tr><tr><td>Ent", "<tr><td>Ent")
+        #print(html_doc)
         soup = BeautifulSoup(html_doc, 'html.parser')
         divs = soup.find('div', {"class": "refreshMeMMH"})
         rows = divs.table.find_all('tr')
