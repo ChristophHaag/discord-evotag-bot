@@ -34,7 +34,7 @@ async def on_message(message):
         spl = message.content.split(" ")
         if len(spl) == 2:
             gamename = ent_hosting.host_game(spl[1])
-            msg = "Game hosted with gamename `" + gamename + "`. Change the game name with `!pub <GAME NAME>`."
+            msg = "Game hosted with gamename `" + gamename + "`. Once having joined the game in Warcraft, change the game name with `!pub <GAME NAME>`."
             await client.send_message(message.channel, msg)
             msg = "Note: It can take a few minutes until the ENT bot hosts the game and you can join."
             await client.send_message(message.channel, msg)
