@@ -5,7 +5,7 @@ import urllib.request
 
 DEBUG = False
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
-debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html"]
+debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html", "websitewith5-12-ent.html", "websitewithout.html"]
 #debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html"]
 
 NEWGAME = "NEW"
@@ -77,15 +77,6 @@ class Requester():
             currentgame.msgstr = "Game hosted on " + currentgame.botname + " [" + currentgame.country + "]: `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
         for disappearedgame in disappearedgames:
             disappearedgame.msgstr = "Game started (or cancelled): `" + disappearedgame.gamename + "` with " + disappearedgame.players + "!"
-        # if which == NEWGAMES:
-        #     for new_game in gamelist["new_games"]:
-        #         msg += "Game name: `" + new_game["gamename"] + "`\t(" + new_game["players"] + ")\n"
-        # elif which == SAMEGAMES:
-        #     for same_game in gamelist["same_games"]:
-        #         msg += "Game name: `" + same_game["gamename"] + "`\t(" + same_game["players"] + ")\n"
-        # elif which == DISAPPEAREDGAMES:
-        #     for disappeared_game in gamelist["disappeared_games"]:
-        #         msg += "Game started or cancelled: `" + disappeared_game["gamename"] + "` with " + disappeared_game["players"] + "\n"
 
     def process_changes(self, new_open_games):
         #print("Process changes for: ", "last games", self.last_open_games, "new games", new_open_games)
@@ -119,9 +110,9 @@ class Requester():
         return current_open_games, disappeared_games
 
     def parse_html(self, html_doc):
-
+        # work around VERY broken html before the ent games
+        html_doc = html_doc.replace("</tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr>", "")
         #print(html_doc)
-
         soup = BeautifulSoup(html_doc, 'html.parser')
         divs = soup.find('div', {"class": "refreshMeMMH"})
         rows = divs.table.find_all('tr')
@@ -139,6 +130,24 @@ class Requester():
             if m:
                 game = OpenGame(botname, country, gn, players)
                 table_games[botname] = game
+
+        divsent = soup.find('div', {"class": "refreshMeENT"})
+        rowsent = divsent.table.find_all('tr')
+        #print("searching ent", divsent)
+        for row in rowsent:
+            data = row.find_all("td")
+            botname = data[0].get_text()
+            country = "-"
+            gn = data[1].get_text()
+            players = data[2].get_text()
+            # print(gn)
+            m = re.search('.*evo.*tag.*', gn.lower())
+            # print(m)
+            #print("ent...", gn)
+            if m:
+                game = OpenGame(botname, country, gn, players)
+                table_games[botname] = game
+
         for g in table_games:
             #print("found " + str(g))
             pass
@@ -167,4 +176,4 @@ if __name__ == "__main__":
             print(prefix, "[" + disappearedgame.status + "]", disappearedgame.msgstr)
 
         if not DEBUG:
-            time.sleep(5)
+            time.sleep(1)

@@ -29,6 +29,8 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     if message.content.startswith('!host'):
+        if not ent_hosting.logged_in:
+            ent_hosting.login()
         spl = message.content.split(" ")
         if len(spl) > 1:
             gamename = ent_hosting.host_game(spl[1])

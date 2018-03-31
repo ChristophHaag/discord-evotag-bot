@@ -10,6 +10,7 @@ cookiefile = "cookies.bin"
 headers = {'User-Agent': 'Mozilla/5.0'}
 session = requests.Session()
 
+logged_in = False
 
 def save_cookies(requests_cookiejar, filename):
     with open(filename, 'wb') as f:
@@ -21,7 +22,13 @@ def load_cookies(filename):
         return pickle.load(f)
 
 
-def login(username, password):
+def login():
+    with open("usernamepassword.txt", "r") as f:
+        username = f.readline().rstrip()
+        password = f.readline().rstrip()
+    print("username", username)
+    print("password", password)
+
     loginurl = "https://entgaming.net/forum/"
     payload = {'username': username, 'password': password, 'redirect': 'index.php', 'sid': '', 'login': 'Login'}
 
@@ -32,6 +39,7 @@ def login(username, password):
         # print(loginresponse.text)
         #f.write(loginresponse.text)
         pass
+    logged_in = True
     save_cookies(loginresponse.cookies, cookiefile)
 
 
@@ -57,17 +65,12 @@ def host_game(owner):
     return gamename
 
 
-if not DEBUG:
-    needsLogin = True  # TODO
-    if needsLogin:
-        with open("usernamepassword.txt", "r") as f:
-            username = f.readline().rstrip()
-            password = f.readline().rstrip()
-        print("username", username)
-        print("password", password)
-        login(username, password)
-    else:
-        session.cookies = load_cookies(cookiefile)
+needsLogin = False  # TODO
+if needsLogin:
+    login()  # reads username and password from usernamepassword.txt
+else:
+    #session.cookies = load_cookies(cookiefile)
+    pass
 
 if __name__ == "__main__":
     if DEBUG:
