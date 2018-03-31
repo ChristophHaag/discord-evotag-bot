@@ -111,8 +111,9 @@ class Requester():
 
     def parse_html(self, html_doc):
         # work around VERY broken html before the ent games
-        html_doc = html_doc.replace("</tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr></tr>", "")
-        #print(html_doc)
+        for _ in range(50):  # TODO: Fix this until there aren't </tr></tr> left
+            html_doc = html_doc.replace("</tr></tr>", "</tr>")
+        # print(html_doc)
         soup = BeautifulSoup(html_doc, 'html.parser')
         divs = soup.find('div', {"class": "refreshMeMMH"})
         rows = divs.table.find_all('tr')
@@ -133,7 +134,7 @@ class Requester():
 
         divsent = soup.find('div', {"class": "refreshMeENT"})
         rowsent = divsent.table.find_all('tr')
-        #print("searching ent", divsent)
+        # print("searching ent", divsent)
         for row in rowsent:
             data = row.find_all("td")
             botname = data[0].get_text()
@@ -143,7 +144,7 @@ class Requester():
             # print(gn)
             m = re.search('.*evo.*tag.*', gn.lower())
             # print(m)
-            #print("ent...", gn)
+            # print("ent...", gn)
             if m:
                 game = OpenGame(botname, country, gn, players)
                 table_games[botname] = game
@@ -176,4 +177,4 @@ if __name__ == "__main__":
             print(prefix, "[" + disappearedgame.status + "]", disappearedgame.msgstr)
 
         if not DEBUG:
-            time.sleep(1)
+            time.sleep(2)
