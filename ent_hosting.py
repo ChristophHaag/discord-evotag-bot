@@ -23,6 +23,7 @@ def load_cookies(filename):
 
 
 def login():
+    global logged_in
     with open("usernamepassword.txt", "r") as f:
         username = f.readline().rstrip()
         password = f.readline().rstrip()
