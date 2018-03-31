@@ -4,6 +4,7 @@ import re
 import urllib.request
 
 DEBUG = False
+DEBUG_POST_GAMES = False
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
 debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html", "websitewith5-12-ent.html", "websitewithout.html"]
 #debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html"]
@@ -60,6 +61,8 @@ class Requester():
 
     def get_makemehost_as_str(self):
         if DEBUG:
+            if not DEBUG_POST_GAMES:
+                return ""
             num = self.requestscount % (len(debugsites) - 1)
             with open(debugsites[num], "r") as f:
                 # print("Debug: opening " + str(num) + ": " + f.name)
@@ -110,6 +113,8 @@ class Requester():
         return current_open_games, disappeared_games
 
     def parse_html(self, html_doc):
+        if html_doc == "":
+            return {}
         # work around VERY broken html before the ent games
         for _ in range(50):  # TODO: Fix this until there aren't </tr></tr> left
             html_doc = html_doc.replace("</tr></tr>", "</tr>")

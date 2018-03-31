@@ -28,13 +28,17 @@ async def on_message(message):
         msg = 'Hello {0.author.mention}'.format(message)
         await client.send_message(message.channel, msg)
 
+    if message.content == ('!help ent'):
+        msg = "Ingame commands: http://wiki.entgaming.net/index.php?title=EntGaming:HostGuide#Commands"
+        await client.send_message(message.channel, msg)
+
     if message.content.startswith('!host'):
         if not ent_hosting.logged_in:
             ent_hosting.login()
         spl = message.content.split(" ")
         if len(spl) == 2:
             gamename = ent_hosting.host_game(spl[1])
-            msg = "Game hosted with game name `" + gamename + "`. Once having joined the game in Warcraft, change the game name with `!pub <GAME NAME>`."
+            msg = "Game hosted with game name `" + gamename + "`. After joining in Warcraft change the name with `!pub <GAME NAME>` and start the game with `!start`."
             await client.send_message(message.channel, msg)
             msg = "Note: It can take a few minutes until the ENT bot hosts the game and you can join."
             await client.send_message(message.channel, msg)
