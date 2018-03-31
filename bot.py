@@ -32,9 +32,11 @@ async def on_message(message):
         if not ent_hosting.logged_in:
             ent_hosting.login()
         spl = message.content.split(" ")
-        if len(spl) > 1:
+        if len(spl) == 2:
             gamename = ent_hosting.host_game(spl[1])
-            msg = "Game hosted with gamename `" + gamename + "`. Join and change the name with !pub <GAME NAME>"
+            msg = "Game hosted with gamename `" + gamename + "`. Change the game name with `!pub <GAME NAME>`."
+            await client.send_message(message.channel, msg)
+            msg = "Note: It can take a few minutes until the ENT bot hosts the game and you can join."
             await client.send_message(message.channel, msg)
         else:
             msg = 'Host a game with !host <YOUR WARCRAFT ACCOUNT>'
