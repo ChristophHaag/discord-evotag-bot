@@ -94,13 +94,13 @@ async def on_ready():
                     await client.send_message(channelobject, "-----------------------------------------------")
                 loopcnt += 1
             except Exception as e:
-                print(e)
-            finally:
-                if mmh.DEBUG:
-                    interval = 1
-                else:
-                    interval = 15
-                await asyncio.sleep(interval)  # task runs every X seconds
+                print("Exception happened!", e)
+
+            if mmh.DEBUG:
+                interval = 1
+            else:
+                interval = 15
+            await asyncio.sleep(interval)  # task runs every X seconds
     client.loop.create_task(my_background_task())
 
 client.run(TOKEN)
