@@ -2,6 +2,7 @@ import time
 from bs4 import BeautifulSoup
 import re
 import urllib.request
+import sys
 
 DEBUG = False
 DEBUG_POST_GAMES = False
@@ -56,7 +57,11 @@ class Requester():
     last_open_games = {}
     requestscount = 0
 
-    def __init__(self):
+    def __init__(self, DEBUG_ARG):
+        if DEBUG_ARG:
+            global DEBUG
+            DEBUG = DEBUG_ARG
+            print("Debugging enabled")
         pass
 
     def get_makemehost_as_str(self):
@@ -168,7 +173,10 @@ EDITMODE = "EDIT"
 PRINTMODE = "PRINT"
 
 if __name__ == "__main__":
-    r = Requester()
+    debugarg = False
+    if len(sys.argv) > 1 and sys.argv[1] == "--debug":
+        debugarg = True
+    r = Requester(debugarg)
     rnum = len(debugsites) if DEBUG else 5
     for i in range(rnum):
         prefix = "Request " + str(i)
