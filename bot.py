@@ -91,6 +91,7 @@ async def on_ready():
                 for disappearedgame in disappearedgames:
                     print("New line: " + disappearedgame.msgstr)
                     await client.send_message(channelobject, disappearedgame.msgstr)
+                    await client.send_message(channelobject, "-----------------------------------------------")
                 loopcnt += 1
             except Exception as e:
                 print(e)
