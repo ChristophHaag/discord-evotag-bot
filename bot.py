@@ -1,6 +1,10 @@
 import discord
 import sys
 
+debugarg = False
+if len(sys.argv) > 1 and sys.argv[1] == "--debug":
+    debugarg = True
+
 import mmh
 import asyncio
 
@@ -12,7 +16,7 @@ with open("token.txt", "r") as tokenfile:
 
 client = discord.Client()
 
-if mmh.DEBUG:
+if mmh.DEBUG or debugarg:
     channelname = "bot-test"
 else:
     channelname = "hosted-games"  # channelid and channelobject will be filled in
@@ -69,9 +73,6 @@ async def on_ready():
     #print("Printing test to ", channelname, channelid, chan)
     #await client.send_message(chan, "test")
 
-    debugarg = False
-    if len(sys.argv) > 1 and sys.argv[1] == "--debug":
-        debugarg = True
     r = mmh.Requester(debugarg)
 
     async def my_background_task():
@@ -101,6 +102,10 @@ async def on_ready():
             else:
                 interval = 15
             await asyncio.sleep(interval)  # task runs every X seconds
+
+        # if for some reason our background tak is interrupted, just start a new one
+        client.loop.create_task(my_background_task())
+
     client.loop.create_task(my_background_task())
 
 client.run(TOKEN)

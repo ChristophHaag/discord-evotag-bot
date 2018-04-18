@@ -5,7 +5,7 @@ import urllib.request
 import sys
 
 DEBUG = False
-DEBUG_POST_GAMES = False
+DEBUG_POST_GAMES = True
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
 debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html", "websitewith5-12-ent.html", "websitewithout.html"]
 #debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html"]
