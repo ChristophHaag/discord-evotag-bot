@@ -75,6 +75,9 @@ async def on_ready():
 
     r = mmh.Requester(debugarg)
 
+    if mmh.DEBUG:
+        mmh.INTERVAL = 1
+
     async def my_background_task():
         await client.wait_until_ready()
 
@@ -96,15 +99,7 @@ async def on_ready():
                 loopcnt += 1
             except Exception as e:
                 print("Exception happened!", e)
-
-            if mmh.DEBUG:
-                interval = 1
-            else:
-                interval = 15
-            await asyncio.sleep(interval)  # task runs every X seconds
-
-        # if for some reason our background tak is interrupted, just start a new one
-        client.loop.create_task(my_background_task())
+            await asyncio.sleep(mmh.INTERVAL)  # task runs every X seconds
 
     client.loop.create_task(my_background_task())
 

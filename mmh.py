@@ -1,4 +1,6 @@
 import time
+from threading import Thread
+
 from bs4 import BeautifulSoup
 import re
 import urllib.request
@@ -6,6 +8,7 @@ import sys
 
 DEBUG = False
 DEBUG_POST_GAMES = True
+INTERVAL = 15
 # debug returns: None, 5/12, 6/12, 6/12, 7/12, None, None, 5/12 + 5/12, 5/12 + 6/12, 5/12 + 6/12, 6/12, None
 debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html", "websitewithdouble5-12.html", "websitewithdouble6-12.html", "websitewithdouble6-12.html", "websitewith6-12.html", "websitewithout.html", "websitewith5-12-ent.html", "websitewithout.html"]
 #debugsites = ["websitewithout.html", "websitewith5-12.html", "websitewith6-12.html", "websitewith6-12.html", "websitewith7-12.html", "websitewithout.html", "websitewithout.html"]
@@ -53,6 +56,17 @@ class OpenGame():
         self.userptr = oldgame.userptr
 
 
+class BackgroundRequester(Thread):
+    def __init__(self, cb):
+        super().__init__()
+        self.cb = cb
+
+    def run(self):
+        while True:
+            self.cb()
+            time.sleep(INTERVAL)
+
+
 class Requester():
     last_open_games = {}
     requestscount = 0
@@ -62,7 +76,9 @@ class Requester():
             global DEBUG
             DEBUG = DEBUG_ARG
             print("Debugging enabled")
-        pass
+        self.lastgames = None
+        self.backgroundtask = BackgroundRequester(self.make_evotag_games)
+        self.backgroundtask.start()
 
     def get_makemehost_as_str(self):
         if DEBUG:
@@ -165,9 +181,12 @@ class Requester():
             pass
         return table_games
 
-    def get_evotag_games(self):
+    def make_evotag_games(self):
         table_games = self.parse_html(self.get_makemehost_as_str())
-        return self.process_changes(table_games)
+        self.lastgames = self.process_changes(table_games)
+
+    def get_evotag_games(self):
+        return self.lastgames
 
 EDITMODE = "EDIT"
 PRINTMODE = "PRINT"
