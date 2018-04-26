@@ -66,7 +66,7 @@ def host_game(owner):
     return gamename
 
 
-needsLogin = False  # TODO
+needsLogin = True  # TODO: Session times out, detect this
 if needsLogin:
     login()  # reads username and password from usernamepassword.txt
 else:
