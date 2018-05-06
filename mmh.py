@@ -17,6 +17,7 @@ NEWGAME = "NEW"
 SAMEGAME = "SAME"
 DISAPPEAREDGAME = "DISAPPEARED"
 
+
 class OpenGame():
     botname = None
     country = None
@@ -90,7 +91,7 @@ class Requester():
                 html_doc = f.read()
         else:
             URL = "http://makemehost.com/games.php"
-            html_doc = urllib.request.urlopen(URL).read().decode("utf8")
+            html_doc = urllib.request.urlopen(URL).read().decode("utf8", errors="replace")
         self.requestscount += 1
         return html_doc
 
