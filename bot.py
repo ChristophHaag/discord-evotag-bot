@@ -57,7 +57,7 @@ async def on_message(message):
             except ValueError:
                 print("Clear: wrong value " + numstr)
                 return
-        msgs = client.logs_from(channelobject, limit=num + 1, before=None, after=None, around=None, reverse=False)
+        msgs = client.logs_from(message.channel, limit=num + 1, before=None, after=None, around=None, reverse=False)
         #print("Messages to clear: ", msgs)
         print("Delete messages:")
         first = True
