@@ -40,7 +40,7 @@ def login():
         # print(loginresponse.text)
         #f.write(loginresponse.text)
         pass
-    logged_in = True
+    # logged_in = True # //TODO: session times out eventually
     save_cookies(loginresponse.cookies, cookiefile)
 
 
@@ -51,6 +51,7 @@ def get_gamename_from_ent_html(html_doc):
     firsthalf = secondhalf.split("Note: ")[0]
     #print(firsthalf)
     return firsthalf
+
 
 def host_game(owner):
     hosturl = "https://entgaming.net/link/host.php"
@@ -65,13 +66,6 @@ def host_game(owner):
     print("Hosted game with name..." + gamename)
     return gamename
 
-
-needsLogin = True  # TODO: Session times out, detect this
-if needsLogin:
-    login()  # reads username and password from usernamepassword.txt
-else:
-    #session.cookies = load_cookies(cookiefile)
-    pass
 
 if __name__ == "__main__":
     if DEBUG:

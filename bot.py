@@ -38,6 +38,36 @@ async def on_message(message):
         msg = "Ingame commands: http://wiki.entgaming.net/index.php?title=EntGaming:HostGuide#Commands"
         await client.send_message(message.channel, msg)
 
+    if message.content.startswith('!remove '):
+        roles = message.author.roles
+        authorized = False
+        authorized_roles = ["Admin", "Bot Administrator", "Moderator"]
+        roles_str = "[" + ", ".join(authorized_roles) + "]"
+        for role in roles:
+            if role.name in authorized_roles:
+                authorized = True
+        if not authorized:
+            await client.send_message(message.channel, "User " + message.author.nick + " not authorized to remove messages! Only roles " + roles_str + " can remove messages!")
+            return
+        spl = message.content.split()
+        if len(spl) > 1:
+            numstr = spl[1]
+            try:
+                num = int(numstr)
+            except ValueError:
+                print("Clear: wrong value " + numstr)
+                return
+        msgs = client.logs_from(channelobject, limit=num + 1, before=None, after=None, around=None, reverse=False)
+        #print("Messages to clear: ", msgs)
+        print("Delete messages:")
+        first = True
+        async for msg in msgs:
+            if first:
+                first = False
+                continue
+            await client.delete_message(msg)
+            print("[deleted]", msg.content)
+
     if message.content.startswith('!host'):
         if not ent_hosting.logged_in:
             ent_hosting.login()
