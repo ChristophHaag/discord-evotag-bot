@@ -91,7 +91,14 @@ class Requester():
                 html_doc = f.read()
         else:
             URL = "http://makemehost.com/games.php"
-            html_doc = urllib.request.urlopen(URL).read().decode("utf8", errors="replace")
+            try:
+                html_doc = urllib.request.urlopen(URL).read().decode("utf8", errors="replace")
+            except urllib.error.URLError as e:
+                print("urlopen error", e)
+                return ""
+            except Exception as e:
+                print("urlopen exception", e)
+                return ""
         self.requestscount += 1
         return html_doc
 
