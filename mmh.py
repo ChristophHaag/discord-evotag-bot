@@ -1,3 +1,4 @@
+import queue
 import time
 from threading import Thread
 
@@ -25,7 +26,6 @@ class OpenGame():
     gamename = None
     players = None
     previous = None
-    userptr = None
     msgstr = None
 
     def __repr__(self):
@@ -53,9 +53,6 @@ class OpenGame():
     def add_prev_game(self, last_open_game):
         self.previous.append(last_open_game)
 
-    def update_values_from(self, oldgame):
-        self.userptr = oldgame.userptr
-
 
 class BackgroundRequester(Thread):
     def __init__(self, cb):
@@ -80,6 +77,8 @@ class Requester():
         self.lastgames = None
         self.backgroundtask = BackgroundRequester(self.make_evotag_games)
         self.backgroundtask.start()
+        self.q = queue.Queue()
+        self.messages = {}
 
     def get_makemehost_as_str(self):
         if DEBUG:
@@ -118,12 +117,9 @@ class Requester():
         for new_botname in new_open_games:
             if new_botname in self.last_open_games.keys():
                 # we have already seen this game last update
-                oldgame = self.last_open_games[new_botname]
-                newgame = new_open_games[new_botname]
-                assert isinstance(oldgame, OpenGame)
-                assert isinstance(newgame, OpenGame)
+                oldgame: OpenGame = self.last_open_games[new_botname]
+                newgame: OpenGame = new_open_games[new_botname]
                 newgame.previous = oldgame
-                newgame.update_values_from(oldgame)
                 newgame.status = SAMEGAME
                 current_open_games[new_botname] = newgame
             else:
@@ -143,7 +139,7 @@ class Requester():
 
     def parse_html(self, html_doc):
         if html_doc == "":
-            return {}
+            return None
         # work around VERY broken html before the ent games
         for _ in range(50):  # TODO: Fix this until there aren't </tr></tr> left
             html_doc = html_doc.replace("</tr></tr>", "</tr>")
@@ -153,13 +149,13 @@ class Requester():
         divs = soup.find('div', {"class": "refreshMeMMH"})
         if not divs:
             print("Error: Table not found!")
-            return ""
+            return None
         rows = divs.table.find_all('tr')
 
         table_games = {}
         for row in rows:
             data = row.find_all("td")
-            botname =  data[0].get_text()
+            botname = data[0].get_text()
             country = data[1].get_text()
             gn = data[3].get_text()
             players = data[4].get_text()
@@ -192,12 +188,27 @@ class Requester():
             pass
         return table_games
 
+    def save_message_for(self, botname, msgobj):
+        self.messages[botname] = msgobj
+
+    def get_message_for(self, botname):
+        return self.messages[botname]
+
     def make_evotag_games(self):
         table_games = self.parse_html(self.get_makemehost_as_str())
-        self.lastgames = self.process_changes(table_games)
+        if not table_games:
+            return
+        processed_games = self.process_changes(table_games)
+        if processed_games:
+            self.q.put(processed_games)
+        else:
+            print("Process_changes failed, this doesn't happen")
+
+    def has_game_updates(self):
+        return self.q.qsize() > 0
 
     def get_evotag_games(self):
-        return self.lastgames
+        return self.q.get(timeout=2)
 
 EDITMODE = "EDIT"
 PRINTMODE = "PRINT"

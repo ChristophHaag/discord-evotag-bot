@@ -114,14 +114,19 @@ async def on_ready():
         loopcnt = 0
         while not client.is_closed:
             try:
+                while not r.has_game_updates():
+                    await asyncio.sleep(1)
                 currentgames, disappearedgames = r.get_evotag_games()
                 for botname, currentgame in currentgames.items():
+                    assert(isinstance(currentgame, mmh.OpenGame))
                     if currentgame.status == mmh.NEWGAME:
-                        currentgame.userptr = await client.send_message(channelobject, currentgame.msgstr)
-                        print("New line: " + currentgame.msgstr, currentgame.userptr)
+                        msgobj = await client.send_message(channelobject, currentgame.msgstr)
+                        print("New line: " + currentgame.msgstr, msgobj)
+                        r.save_message_for(currentgame.botname, msgobj)
                     elif currentgame.status == mmh.SAMEGAME:
-                        print("Editing msg: " + currentgame.msgstr, currentgame.userptr)
-                        currentgame.userptr = await client.edit_message(currentgame.userptr, currentgame.msgstr)
+                        msgobj = r.get_message_for(currentgame.botname)
+                        print("Editing msg: " + currentgame.msgstr, msgobj)
+                        currentgame.userptr = await client.edit_message(msgobj, currentgame.msgstr)
                 for disappearedgame in disappearedgames:
                     print("New line: " + disappearedgame.msgstr)
                     await client.send_message(channelobject, disappearedgame.msgstr)
@@ -129,7 +134,6 @@ async def on_ready():
                 loopcnt += 1
             except Exception as e:
                 print("Exception happened!", e)
-            await asyncio.sleep(mmh.INTERVAL)  # task runs every X seconds
 
     client.loop.create_task(my_background_task())
 
