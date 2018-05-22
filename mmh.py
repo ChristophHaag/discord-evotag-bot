@@ -151,6 +151,9 @@ class Requester():
         #print(html_doc)
         soup = BeautifulSoup(html_doc, 'html.parser')
         divs = soup.find('div', {"class": "refreshMeMMH"})
+        if not divs:
+            print("Error: Table not found!")
+            return ""
         rows = divs.table.find_all('tr')
 
         table_games = {}
