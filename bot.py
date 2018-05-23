@@ -1,3 +1,5 @@
+import traceback
+
 import discord
 import sys
 
@@ -106,7 +108,7 @@ async def on_ready():
     r = mmh.Requester(debugarg)
 
     if mmh.DEBUG:
-        mmh.INTERVAL = 1
+        mmh.INTERVAL = 3
 
     async def my_background_task():
         await client.wait_until_ready()
@@ -120,13 +122,11 @@ async def on_ready():
                 for botname, currentgame in currentgames.items():
                     assert(isinstance(currentgame, mmh.OpenGame))
                     if currentgame.status == mmh.NEWGAME:
-                        msgobj = await client.send_message(channelobject, currentgame.msgstr)
-                        print("New line: " + currentgame.msgstr, msgobj)
-                        r.save_message_for(currentgame.botname, msgobj)
+                        currentgame.msgobj = await client.send_message(channelobject, currentgame.msgstr)
+                        print("New line: " + currentgame.msgstr, currentgame.msgobj)
                     elif currentgame.status == mmh.SAMEGAME:
-                        msgobj = r.get_message_for(currentgame.botname)
-                        print("Editing msg: " + currentgame.msgstr, msgobj)
-                        currentgame.userptr = await client.edit_message(msgobj, currentgame.msgstr)
+                        print("Editing msg: " + currentgame.msgstr, currentgame.msgobj)
+                        currentgame.msgobj = await client.edit_message(currentgame.msgobj, currentgame.msgstr)
                 for disappearedgame in disappearedgames:
                     print("New line: " + disappearedgame.msgstr)
                     await client.send_message(channelobject, disappearedgame.msgstr)
@@ -134,6 +134,7 @@ async def on_ready():
                 loopcnt += 1
             except Exception as e:
                 print("Exception happened!", e)
+                traceback.print_exc()
 
     client.loop.create_task(my_background_task())
 
