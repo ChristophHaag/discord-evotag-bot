@@ -128,6 +128,8 @@ async def on_ready():
                         print("Editing msg: " + currentgame.msgstr, currentgame.msgobj)
                         currentgame.msgobj = await client.edit_message(currentgame.msgobj, currentgame.msgstr)
                 for disappearedgame in disappearedgames:
+                    # first alter the old message from [OPEN] to [CLOSED]
+                    disappearedgame.msgobj = await client.edit_message(disappearedgame.msgobj, disappearedgame.msgobj.content.replace("[OPEN]", "[CLOSED]"))
                     print("New line: " + disappearedgame.msgstr)
                     await client.send_message(channelobject, disappearedgame.msgstr)
                     await client.send_message(channelobject, "-----------------------------------------------")

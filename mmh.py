@@ -104,7 +104,7 @@ class Requester():
         for currentgame_botname in currentgames:
             currentgame = currentgames[currentgame_botname]
             #print("str for", currentgame)
-            currentgame.msgstr = "Game hosted on " + currentgame.botname + " [" + currentgame.country + "]: `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
+            currentgame.msgstr = "[OPEN] Game hosted on " + currentgame.botname + " [" + currentgame.country + "]: `" + currentgame.gamename + "`\t(" + currentgame.players + ")"
         for disappearedgame in disappearedgames:
             disappearedgame.msgstr = "Game started (or cancelled): `" + disappearedgame.gamename + "` with " + disappearedgame.players + "!"
 
