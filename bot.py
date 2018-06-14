@@ -3,6 +3,8 @@ import traceback
 import discord
 import sys
 
+import time
+
 debugarg = False
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     debugarg = True
@@ -140,4 +142,17 @@ async def on_ready():
 
     client.loop.create_task(my_background_task())
 
-client.run(TOKEN)
+
+def run_client(c, *args, **kwargs):
+    loop = asyncio.get_event_loop()
+    while True:
+        try:
+            loop.run_until_complete(c.start(*args, **kwargs))
+        except Exception as e:
+            print("Error", e)
+        print("Waiting until restart")
+        time.sleep(10)
+
+
+# client.run(TOKEN)  # https://stackoverflow.com/a/49082260
+run_client(client, TOKEN)
