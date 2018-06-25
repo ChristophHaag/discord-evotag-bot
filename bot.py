@@ -5,6 +5,8 @@ import sys
 
 import time
 
+import os
+
 debugarg = False
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     debugarg = True
@@ -18,7 +20,7 @@ with open("token.txt", "r") as tokenfile:
     TOKEN = tokenfile.read().rstrip()
 #print("Token: " + TOKEN)
 
-client = discord.Client()
+client: discord.Client = discord.Client()
 
 if mmh.DEBUG or debugarg:
     channelname = "bot-test"
@@ -26,6 +28,36 @@ else:
     channelname = "hosted-games"  # channelid and channelobject will be filled in
 channelid = None
 channelobject = None
+
+
+def already_exists(lines, nick):
+    for line in lines:
+        if line.rstrip().lstrip() == nick:
+            return True
+    return False
+
+
+def delete_if_exists(nick):
+    with open("subscriptions.txt", "r") as f:
+        lines = f.readlines()
+    newlines = [n for n in lines if not n.rstrip() == nick]
+    deleted = len(newlines) != len(lines)
+    if deleted:
+        with open("subscriptions.txt", "w") as f:
+            f.writelines(newlines)
+    return deleted
+
+
+async def message_subscribed(msg):
+    with open("subscriptions.txt", "r") as f:
+        lines = f.readlines()
+
+    server: discord.Server = list(client.servers)[0]
+    members = {m.nick: m for m in server.members}
+    for line in lines:
+        if line.rstrip() in members.keys():
+            author = members[line.rstrip()]
+            await client.send_message(author, msg)
 
 
 @client.event
@@ -38,6 +70,30 @@ async def on_message(message):
         msg = 'Hello {0.author.mention}'.format(message)
         await client.send_message(message.channel, msg)
 
+    #if message.content.startswith('!test_subscription'):
+    #    await message_subscribed("test123")
+
+    if message.content.startswith('!subscribe'):
+        if not os.path.exists("subscriptions.txt"): open("subscriptions.txt", 'a').close()
+        author = message.author
+        with open("subscriptions.txt", "r") as f:
+            lines = f.readlines()
+        if already_exists(lines, author.nick):
+            await client.send_message(message.channel, '{0.author.mention} was already subscribed!'.format(message))
+        else:
+            lines.append(author.nick)
+            with open("subscriptions.txt", "w") as f:
+                f.writelines(lines)
+                await client.send_message(message.channel, '{0.author.mention} is now subscribed!'.format(message))
+                await client.send_message(author, "Hello {0.author.mention}, you are now subscribed and will be messaged when games start and close. To unsubscribe, type !unsubscribe".format(message))
+
+    if message.content.startswith('!unsubscribe'):
+        deleted = delete_if_exists(message.author.nick)
+        if deleted:
+            await client.send_message(message.channel, '{0.author.mention} has unsubscribed!'.format(message))
+            await client.send_message(message.author, "Hello {0.author.mention}, you are now unsubscribed. To subscribe again, type !subscribe".format(message))
+        else:
+            await client.send_message(message.channel, '{0.author.mention} was not subscribed!'.format(message))
     if message.content == ('!help ent'):
         msg = "Ingame commands: http://wiki.entgaming.net/index.php?title=EntGaming:HostGuide#Commands"
         await client.send_message(message.channel, msg)
@@ -125,6 +181,7 @@ async def on_ready():
                     assert(isinstance(currentgame, mmh.OpenGame))
                     if currentgame.status == mmh.NEWGAME:
                         currentgame.msgobj = await client.send_message(channelobject, currentgame.msgstr)
+                        await message_subscribed("evo tag game got hosted: {}".format(currentgame.gamename))
                         print("New line: " + currentgame.msgstr, currentgame.msgobj)
                     elif currentgame.status == mmh.SAMEGAME:
                         print("Editing msg: " + currentgame.msgstr, currentgame.msgobj)
@@ -135,6 +192,7 @@ async def on_ready():
                     print("New line: " + disappearedgame.msgstr)
                     await client.send_message(channelobject, disappearedgame.msgstr)
                     await client.send_message(channelobject, "-----------------------------------------------")
+                    await message_subscribed("evo tag game started: {}".format(disappearedgame.gamename))
                 loopcnt += 1
             except Exception as e:
                 print("Exception happened!", e)
