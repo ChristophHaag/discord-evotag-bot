@@ -44,7 +44,7 @@ def delete_if_exists(nick):
     deleted = len(newlines) != len(lines)
     if deleted:
         with open("subscriptions.txt", "w") as f:
-            f.writelines(newlines)
+            f.write("\n".join(newlines))
     return deleted
 
 
@@ -83,7 +83,7 @@ async def on_message(message):
         else:
             lines.append(author.nick)
             with open("subscriptions.txt", "w") as f:
-                f.writelines(lines)
+                f.write("\n".join(lines))
                 await client.send_message(message.channel, '{0.author.mention} is now subscribed!'.format(message))
                 await client.send_message(author, "Hello {0.author.mention}, you are now subscribed and will be messaged when games start and close. To unsubscribe, type !unsubscribe".format(message))
 
