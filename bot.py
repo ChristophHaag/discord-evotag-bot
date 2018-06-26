@@ -50,7 +50,7 @@ def delete_if_exists(nick):
 
 async def message_subscribed(msg):
     with open("subscriptions.txt", "r") as f:
-        lines = f.readlines()
+        lines = [line for line in f.readlines() if line.rstrip()]
 
     server: discord.Server = list(client.servers)[0]
     members = {m.nick: m for m in server.members}
