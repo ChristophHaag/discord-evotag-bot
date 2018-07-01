@@ -202,15 +202,16 @@ async def on_ready():
 
 
 def run_client(c, *args, **kwargs):
-    loop = asyncio.get_event_loop()
+    global client
     while True:
+        loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(c.start(*args, **kwargs))
         except Exception as e:
             print("Error", e)
         print("Waiting until restart")
         time.sleep(10)
-
+        client = discord.Client()
 
 # client.run(TOKEN)  # https://stackoverflow.com/a/49082260
 run_client(client, TOKEN)
