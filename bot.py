@@ -20,7 +20,7 @@ with open("token.txt", "r") as tokenfile:
     TOKEN = tokenfile.read().rstrip()
 #print("Token: " + TOKEN)
 
-client: discord.Client = discord.Client()
+client = discord.Client()
 
 if mmh.DEBUG or debugarg:
     channelname = "bot-test"
@@ -202,16 +202,21 @@ async def on_ready():
 
 
 def run_client(c, *args, **kwargs):
-    global client
-    while True:
-        loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(c.start(*args, **kwargs))
-        except Exception as e:
-            print("Error", e)
-        print("Waiting until restart")
-        time.sleep(10)
-        client = discord.Client()
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(c.start(*args, **kwargs))
+    except Exception as e:
+        loop.stop()
+        while loop.is_running():
+            print("Waiting for event loop to stop...")
+            time.sleep(1)
+        loop.close()
+        print("Error", e)
 
 # client.run(TOKEN)  # https://stackoverflow.com/a/49082260
-run_client(client, TOKEN)
+while (True):
+    run_client(client, TOKEN)
+    client.close()
+    print("Waiting until restart")
+    time.sleep(10)
+    client = discord.Client()
