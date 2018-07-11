@@ -39,7 +39,7 @@ def already_exists(lines, nick):
 
 def delete_if_exists(nick):
     with open("subscriptions.txt", "r") as f:
-        lines = f.readlines()
+        lines = [l for l in f.readlines() if l.rstrip()]
     newlines = [n for n in lines if not n.rstrip() == nick]
     deleted = len(newlines) != len(lines)
     if deleted:
@@ -77,7 +77,7 @@ async def on_message(message):
         if not os.path.exists("subscriptions.txt"): open("subscriptions.txt", 'a').close()
         author = message.author
         with open("subscriptions.txt", "r") as f:
-            lines = f.readlines()
+            lines = [l for l in f.readlines() if l.rstrip()]
         if already_exists(lines, author.nick):
             await client.send_message(message.channel, '{0.author.mention} was already subscribed!'.format(message))
         else:
