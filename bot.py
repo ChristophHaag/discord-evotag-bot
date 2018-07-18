@@ -52,12 +52,14 @@ async def message_subscribed(msg):
     with open("subscriptions.txt", "r") as f:
         lines = [line for line in f.readlines() if line.rstrip()]
 
-    server: discord.Server = list(client.servers)[0]
-    members = {m.nick: m for m in server.members}
+    members = {m.nick: m for m in client.get_all_members()}
+    print("Members " + str(members))
     for line in lines:
+        print("Line " + str(line))
         if line.rstrip() in members.keys():
+            print("messaging " + line)
             author = members[line.rstrip()]
-            await client.send_message(author, msg)
+            await author.send(msg)
 
 
 @client.event
@@ -68,7 +70,7 @@ async def on_message(message):
 
     if message.content.startswith('!hello'):
         msg = 'Hello {0.author.mention}'.format(message)
-        await client.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     #if message.content.startswith('!test_subscription'):
     #    await message_subscribed("test123")
@@ -79,26 +81,28 @@ async def on_message(message):
         with open("subscriptions.txt", "r") as f:
             lines = [l for l in f.readlines() if l.rstrip()]
         if already_exists(lines, author.nick):
-            await client.send_message(message.channel, '{0.author.mention} was already subscribed!'.format(message))
+            await message.channel.send('{0.author.mention} was already subscribed!'.format(message))
         else:
             lines.append(author.nick)
             with open("subscriptions.txt", "w") as f:
                 f.write("\n".join(lines))
-                await client.send_message(message.channel, '{0.author.mention} is now subscribed!'.format(message))
-                await client.send_message(author, "Hello {0.author.mention}, you are now subscribed and will be messaged when games start and close. To unsubscribe, type !unsubscribe".format(message))
+                await message.channel.send('{0.author.mention} is now subscribed!'.format(message))
+                await author.send("Hello {0.author.mention}, you are now subscribed and will be messaged when games start and close. To unsubscribe, type !unsubscribe".format(message))
 
     if message.content.startswith('!unsubscribe'):
         deleted = delete_if_exists(message.author.nick)
         if deleted:
-            await client.send_message(message.channel, '{0.author.mention} has unsubscribed!'.format(message))
-            await client.send_message(message.author, "Hello {0.author.mention}, you are now unsubscribed. To subscribe again, type !subscribe".format(message))
+            await message.channel.send('{0.author.mention} has unsubscribed!'.format(message))
+            await message.author.send("Hello {0.author.mention}, you are now unsubscribed. To subscribe again, type !subscribe".format(message))
         else:
-            await client.send_message(message.channel, '{0.author.mention} was not subscribed!'.format(message))
+            await message.channel.send('{0.author.mention} was not subscribed!'.format(message))
     if message.content == ('!help ent'):
         msg = "Ingame commands: http://wiki.entgaming.net/index.php?title=EntGaming:HostGuide#Commands"
-        await client.send_message(message.channel, msg)
+        await message.channel.send(msg)
 
     if message.content.startswith('!remove '):
+        await message.channel.send("Currently disabled")
+        return
         roles = message.author.roles
         authorized = False
         authorized_roles = ["Admin", "Bot Administrator", "Moderator"]
@@ -107,7 +111,7 @@ async def on_message(message):
             if role.name in authorized_roles:
                 authorized = True
         if not authorized:
-            await client.send_message(message.channel, "User " + message.author.nick + " not authorized to remove messages! Only roles " + roles_str + " can remove messages!")
+            await message.channel.send("User " + message.author.nick + " not authorized to remove messages! Only roles " + roles_str + " can remove messages!")
             return
         spl = message.content.split()
         if len(spl) > 1:
@@ -117,7 +121,7 @@ async def on_message(message):
             except ValueError:
                 print("Clear: wrong value " + numstr)
                 return
-        msgs = client.logs_from(message.channel, limit=num + 1, before=None, after=None, around=None, reverse=False)
+        msgs = message.channel.logs_from(limit=num + 1, before=None, after=None, around=None, reverse=False)
         #print("Messages to clear: ", msgs)
         print("Delete messages:")
         first = True
@@ -135,12 +139,12 @@ async def on_message(message):
         if len(spl) == 2:
             gamename = ent_hosting.host_game(spl[1])
             msg = "Game hosted with game name `" + gamename + "`. After joining in Warcraft change the name with `!pub <GAME NAME>` and start the game with `!start`."
-            await client.send_message(message.channel, msg)
+            await message.channel.send(msg)
             msg = "Note: It can take a few minutes until the ENT bot hosts the game and you can join."
-            await client.send_message(message.channel, msg)
+            await message.channel.send(msg)
         else:
             msg = 'Host a game with !host <YOUR WARCRAFT ACCOUNT>'
-            await client.send_message(message.channel, msg)
+            await message.channel.send(msg)
 
 
 @client.event
@@ -149,19 +153,18 @@ async def on_ready():
     global channelobject
     print('Logged in as "' + client.user.name + '" (' + str(client.user.id) + ")")
     print("Available Channels:")
-    for server in client.servers:
-        for channel in server.channels:
-            print(channel.name + " " + channel.id)
-            if channel.name == channelname:
-                channelid = channel.id
-                channelobject = client.get_channel(channelid)
+    for channel in client.get_all_channels():
+        print(channel.name + " " + str(channel.id))
+        if channel.name == channelname:
+            channelid = channel.id
+            channelobject = client.get_channel(channelid)
 
     if not channelid:
         print("Error: Channel " + channelname + " not found!")
         return
 
     #print("Printing test to ", channelname, channelid, chan)
-    #await client.send_message(chan, "test")
+    #await chan.send("test")
 
     r = mmh.Requester(debugarg)
 
@@ -172,7 +175,7 @@ async def on_ready():
         await client.wait_until_ready()
 
         loopcnt = 0
-        while not client.is_closed:
+        while True:
             try:
                 while not r.has_game_updates():
                     await asyncio.sleep(1)
@@ -180,18 +183,18 @@ async def on_ready():
                 for botname, currentgame in currentgames.items():
                     assert(isinstance(currentgame, mmh.OpenGame))
                     if currentgame.status == mmh.NEWGAME:
-                        currentgame.msgobj = await client.send_message(channelobject, currentgame.msgstr)
+                        currentgame.msgobj = await channelobject.send(currentgame.msgstr)
                         await message_subscribed("evo tag game got hosted: {}".format(currentgame.gamename))
                         print("New line: " + currentgame.msgstr, currentgame.msgobj)
                     elif currentgame.status == mmh.SAMEGAME:
                         print("Editing msg: " + currentgame.msgstr, currentgame.msgobj)
-                        currentgame.msgobj = await client.edit_message(currentgame.msgobj, currentgame.msgstr)
+                        await currentgame.msgobj.edit(content=currentgame.msgstr)
                 for disappearedgame in disappearedgames:
                     # first alter the old message from [OPEN] to [CLOSED]
-                    disappearedgame.msgobj = await client.edit_message(disappearedgame.msgobj, disappearedgame.msgobj.content.replace("[OPEN]", "[CLOSED]"))
+                    await disappearedgame.msgobj.edit(content=disappearedgame.msgobj.content.replace("[OPEN]", "[CLOSED]"))
                     print("New line: " + disappearedgame.msgstr)
-                    await client.send_message(channelobject, disappearedgame.msgstr)
-                    await client.send_message(channelobject, "-----------------------------------------------")
+                    await channelobject.send(disappearedgame.msgstr)
+                    await channelobject.send("-----------------------------------------------")
                     await message_subscribed("evo tag game started: {}".format(disappearedgame.gamename))
                 loopcnt += 1
             except Exception as e:
