@@ -147,7 +147,7 @@ async def on_message(message):
 async def on_ready():
     global channelid
     global channelobject
-    print('Logged in as "' + client.user.name + '" (' + client.user.id + ")")
+    print('Logged in as "' + client.user.name + '" (' + str(client.user.id) + ")")
     print("Available Channels:")
     for server in client.servers:
         for channel in server.channels:
