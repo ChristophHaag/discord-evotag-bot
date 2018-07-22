@@ -177,6 +177,7 @@ async def on_ready():
                 while not r.has_game_updates():
                     await asyncio.sleep(1)
                 currentgames, disappearedgames = r.get_evotag_games()
+                print(str(loopcnt) + ", " + str(client) + ": Update from mmh! current " + str(currentgames) + ", dis " + str(disappearedgames))
                 for botname, currentgame in currentgames.items():
                     assert(isinstance(currentgame, mmh.OpenGame))
                     if currentgame.status == mmh.NEWGAME:
@@ -193,7 +194,7 @@ async def on_ready():
                     await channelobject.send(disappearedgame.msgstr)
                     await channelobject.send("-----------------------------------------------")
                     await message_subscribed("evo tag game started: {}".format(disappearedgame.gamename))
-                loopcnt += 1
+                loopcnt = (loopcnt + 1) % 10000
             except Exception as e:
                 print("Exception happened!", e)
                 traceback.print_exc()
@@ -217,6 +218,8 @@ def run_client(c, *args, **kwargs):
 while (True):
     run_client(client, TOKEN)
     client.close()
+    while not client.is_closed():
+        print("Waiting for client to close...")
     print("Waiting until restart")
     time.sleep(10)
     client = discord.Client()
