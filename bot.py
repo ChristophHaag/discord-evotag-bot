@@ -53,11 +53,8 @@ async def message_subscribed(msg):
         lines = [line for line in f.readlines() if line.rstrip()]
 
     members = {m.nick: m for m in client.get_all_members()}
-    print("Members " + str(members))
     for line in lines:
-        print("Line " + str(line))
         if line.rstrip() in members.keys():
-            print("messaging " + line)
             author = members[line.rstrip()]
             await author.send(msg)
 
