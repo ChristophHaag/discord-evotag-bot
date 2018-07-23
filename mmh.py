@@ -77,7 +77,7 @@ class Requester():
         self.mmhCurrentGames = {}
         self.backgroundtask = BackgroundRequester(self.query_evotag_games)
         self.backgroundtask.start()
-        self.newGamesQueue = queue.Queue()
+        self.newGamesQueue = []  # not thread safe but we don't care
 
     def get_makemehost_as_str(self):
         if DEBUG:
@@ -193,14 +193,14 @@ class Requester():
         table_games = self.parse_html(self.get_makemehost_as_str())
         if table_games is None:
             return
-        self.newGamesQueue.put(table_games)
+        self.newGamesQueue.append(table_games)
         # print("Queried new", table_games)
 
     def has_game_updates(self):
-        return self.newGamesQueue.qsize() > 0
+        return len(self.newGamesQueue) > 0
 
     def get_evotag_games(self):
-        processed_games = self.process_changes(self.newGamesQueue.get())
+        processed_games = self.process_changes(self.newGamesQueue.pop(0))
         if processed_games:
             return processed_games
         else:

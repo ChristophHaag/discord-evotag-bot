@@ -144,6 +144,8 @@ async def on_message(message):
             await message.channel.send(msg)
 
 
+task_created = False
+
 @client.event
 async def on_ready():
     global channelid
@@ -199,12 +201,18 @@ async def on_ready():
                 print("Exception happened!", e)
                 traceback.print_exc()
 
-    client.loop.create_task(my_background_task())
+    global task_created
+    if not task_created:
+        client.loop.create_task(my_background_task())
+        task_created = True
+    else:
+        print("ERROR: TRYING TO CREATE A SECOND TASK WITH NO REASON TO DO SO")
 
 
 def run_client(c, *args, **kwargs):
     loop = asyncio.get_event_loop()
     try:
+        print("Running bot main loop")
         loop.run_until_complete(c.start(*args, **kwargs))
     except Exception as e:
         loop.stop()
