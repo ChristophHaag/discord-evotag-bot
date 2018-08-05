@@ -226,8 +226,6 @@ def run_client(c, *args, **kwargs):
 while (True):
     run_client(client, TOKEN)
     client.close()
-    while not client.is_closed():
-        print("Waiting for client to close...")
     print("Waiting until restart")
     time.sleep(10)
     client = discord.Client()
