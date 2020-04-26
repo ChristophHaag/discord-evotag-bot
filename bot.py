@@ -11,7 +11,6 @@ debugarg = False
 if len(sys.argv) > 1 and sys.argv[1] == "--debug":
     debugarg = True
 
-import mmh
 import asyncio
 
 import ent_hosting
@@ -22,7 +21,7 @@ with open("token.txt", "r") as tokenfile:
 
 client = discord.Client()
 
-if mmh.DEBUG or debugarg:
+if debugarg:
     channelname = "bot-test"
 else:
     channelname = "hosted-games"  # channelid and channelobject will be filled in
@@ -146,6 +145,56 @@ async def on_message(message):
 
 task_created = False
 
+import json
+import urllib.request
+
+def get_gamelist_json():
+    j = None
+    if debugarg:
+        with open("gamelist.json", "r") as f:
+            j = json.load(f)
+    else:
+        url = "https://api.wc3stats.com/gamelist"
+        try:
+            resp = urllib.request.urlopen(url).read().decode("utf8", errors="replace")
+            j = json.loads(resp)
+        except urllib.error.URLError as e:
+            print("urlopen error", e)
+            return ""
+        except Exception as e:
+            print("urlopen exception", e)
+            return ""
+    #print("json ", j)
+    return j
+
+
+current_games = dict()
+
+
+def is_evo_tag(json):
+    res = json["map"].startswith("Evolution Tag")
+    #print("Is evo tag:", json["map"], res)
+    return res
+
+def is_new(json):
+    return json["id"] not in current_games.keys()
+
+def game_to_msgstr(json):
+    res = "{} - {} [{}/{}] - {}".format(json["name"], json["map"], json["slotsTaken"], json["slotsTotal"], json["host"])
+    return res
+
+def get_started_games(json):
+    res = []
+    json_ids = []
+
+    for jgame in json["body"]:
+        if (is_evo_tag(jgame)):
+            json_ids.append(jgame["id"])
+    for game_id in current_games.keys():
+        if game_id not in json_ids:
+            res.append(current_games[game_id])
+    return res
+
 @client.event
 async def on_ready():
     global channelid
@@ -165,41 +214,56 @@ async def on_ready():
     #print("Printing test to ", channelname, channelid, chan)
     #await chan.send("test")
 
-    r = mmh.Requester(debugarg)
-
-    if mmh.DEBUG:
-        mmh.INTERVAL = 3
-
     async def my_background_task():
         await client.wait_until_ready()
 
         loopcnt = 0
         while True:
             try:
-                while not r.has_game_updates():
-                    await asyncio.sleep(1)
-                currentgames, disappearedgames = r.get_evotag_games()
-                print(str(loopcnt) + ", " + str(client) + ": Update from mmh! current " + str(currentgames) + ", dis " + str(disappearedgames))
-                for botname, currentgame in currentgames.items():
-                    assert(isinstance(currentgame, mmh.OpenGame))
-                    if currentgame.status == mmh.NEWGAME:
-                        currentgame.msgobj = await channelobject.send(currentgame.msgstr)
-                        await message_subscribed("evo tag game got hosted: {}".format(currentgame.gamename))
-                        print("New line: " + currentgame.msgstr, currentgame.msgobj)
-                    elif currentgame.status == mmh.SAMEGAME:
-                        print("Editing msg: " + currentgame.msgstr, currentgame.msgobj)
-                        await currentgame.msgobj.edit(content=currentgame.msgstr)
-                for disappearedgame in disappearedgames:
+                j = get_gamelist_json()
+                #print("Read", j)
+
+
+                for jgame in j["body"]:
+                    if is_evo_tag(jgame):
+                        msgstr = "[OPEN] " + game_to_msgstr(jgame)
+                        if is_new(jgame):
+                            print("New Evo tag, ", jgame)
+                            current_games[jgame["id"]] = jgame
+
+                            print("Posting message {}".format(msgstr))
+
+                            jgame["prev_msgstr"] = msgstr
+
+                            jgame["msgobj"] = await channelobject.send(msgstr)
+                            await message_subscribed("evo tag game got hosted: {}".format(msgstr))
+                        else:
+                            prev_msg = current_games[jgame["id"]]["prev_msgstr"]
+                            #print("prev {}, new {}".format(prev_msg, msgstr)
+                            if prev_msg == msgstr:
+                                #print("Message did not change {}".format(msgstr))
+                                continue
+                            print("Editing msg: " + msgstr, current_games[jgame["id"]]["msgobj"])
+                            await current_games[jgame["id"]]["msgobj"].edit(content=msgstr)
+                            current_games[jgame["id"]]["prev_msgstr"] = msgstr
+
+                started_games = get_started_games(j)
+                for started_game in started_games:
                     # first alter the old message from [OPEN] to [CLOSED]
-                    await disappearedgame.msgobj.edit(content=disappearedgame.msgobj.content.replace("[OPEN]", "[CLOSED]"))
-                    print("New line: " + disappearedgame.msgstr)
-                    await channelobject.send(disappearedgame.msgstr)
-                    await channelobject.send("-----------------------------------------------")
-                    await message_subscribed("evo tag game started: {}".format(disappearedgame.gamename))
-                loopcnt = (loopcnt + 1) % 10000
+                    msgstr = "[STARTED] " + game_to_msgstr(started_game)
+                    await started_game["msgobj"].edit(content=msgstr)
+                    #await channelobject.send(msgstr)
+                    #await channelobject.send("-----------------------------------------------")
+                    await message_subscribed("evo tag game started: {}".format(msgstr))
+                    print("Started game {}", started_game)
+                    del current_games[started_game["id"]]
+                await asyncio.sleep(10)
+
             except Exception as e:
                 print("Exception happened!", e)
                 traceback.print_exc()
+                await asyncio.sleep(10)
+
 
     global task_created
     if not task_created:
