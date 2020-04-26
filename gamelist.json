@@ -135,6 +135,19 @@
             "id": 267419
         },
         {
+            "name": "Evolution tag",
+            "server": "usw",
+            "map": "Evolution Tag 2.48a.w3x",
+            "host": "exv5#1223",
+            "details": null,
+            "slotsTaken": 3,
+            "slotsTotal": 12,
+            "created": 1587860584,
+            "checksum": "",
+            "lastUpdated": 1587860616,
+            "id": 267412
+        },
+        {
             "name": "Footman frenzy 5.6.3",
             "server": "eu",
             "map": "Reforged_Footmen_Frenzy_v5.6.3.w3x",

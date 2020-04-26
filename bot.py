@@ -180,7 +180,7 @@ def is_new(json):
     return json["id"] not in current_games.keys()
 
 def game_to_msgstr(json):
-    res = "{} - {} [{}/{}] - {}".format(json["name"], json["map"], json["slotsTaken"], json["slotsTotal"], json["host"])
+    res = "{} - {} [{}/{}] - {} [Server: {}]".format(json["name"], json["map"], json["slotsTaken"], json["slotsTotal"], json["host"], json["server"])
     return res
 
 def get_started_games(json):
